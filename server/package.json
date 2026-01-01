@@ -3,17 +3,17 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-"scripts": {
-  "dev": "tsx watch src/index.ts",
-  "build": "rimraf dist && tsc",
-  "start": "node dist/index.js"
-},
-
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "rimraf dist && tsc",
+    "start": "node dist/index.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "mongoose": "^9.1.1",
     "nodemon": "^3.1.11",
     "typescript": "^5.9.3"
   },
