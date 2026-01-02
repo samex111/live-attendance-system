@@ -1,11 +1,15 @@
 import express, { type Request, type Response } from 'express'
 import { getQuote } from './utils/getQuote.js';
+import {connectDB} from './config/db.js'
+import { userRouter } from './services/user.js';
 const PORT = process.env.PORT || 3000
 const app = express();
 app.use(express.json());
+connectDB();
 app.get('/', (req: Request, res: Response) => {
     res.status(200).json('Backend is running again ')
 })
+app.use('/user', userRouter)
 app.get('/quote', async (req: Request, res: Response) => {
     try {
         const quote = await getQuote()
