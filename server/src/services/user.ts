@@ -1,9 +1,10 @@
-import { UserModel } from "../models/schema.js";
+import { ClassModel, UserModel } from "../models/schema.js";
 import z, { email, success,  } from 'zod'
 import jwt from 'jsonwebtoken'
 import { Router , type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
 import { JWT_SECRET } from "../config/env.js";
+import { requireRole, userMiddleware } from "../middeleware/auth.js";
 
 export const userRouter = Router();
 
@@ -104,5 +105,34 @@ userRouter.post('/signin', async(req:Request, res:Response)=>{
                     msg:"error :  " + e
                 }
             })
+    }
+});
+
+userRouter.post('/create/class' , userMiddleware , requireRole(['teacher']) , 
+async (req:Request , res:Response) => {
+    const requireBody = z.object({
+        className: z.string(),
+        studentIds: z.string().array()
+    })
+    const parseData = requireBody.safeParse(req.body);
+    
+    if(!parseData.success){
+        return res.status(400).json({
+            success:false,
+            data:{
+                error:"erron in zod parsing: " +  parseData.error
+            }
+        })
+    }
+    const {className ,  studentIds}  = parseData.data;
+
+    try{
+        await ClassModel.create({
+            className:className,
+            teacherId:req.userId,
+            studentIds:studentIds
+        })
+    }catch(e){
+
     }
 })

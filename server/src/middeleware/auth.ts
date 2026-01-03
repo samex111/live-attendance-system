@@ -23,7 +23,7 @@ export const userMiddleware = async (req:Request , res:Response , next : NextFun
     try{
         const decoded =  jwt.verify(token as string ,JWT_SECRET) as {id : string , role : string }  ;
         req.userId = decoded.id
-        req.role = decoded.role
+        req.role = decoded.role 
         next()
     }catch(e){
         return res.status(401).json({
@@ -32,4 +32,13 @@ export const userMiddleware = async (req:Request , res:Response , next : NextFun
         })
     }
 }
-// role based acess 
+
+export function requireRole(roles:string[]){
+    return(req:Request , res:Response , next:NextFunction)=>{
+        // @ts-ignore
+        if(!roles.includes(req.role)){
+             return res.status(403).json({ message: "Forbidden" });
+        }
+        next(); 
+    }
+}
