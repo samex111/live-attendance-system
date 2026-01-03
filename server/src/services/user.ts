@@ -1,10 +1,11 @@
 import { ClassModel, UserModel } from "../models/schema.js";
 import z, { email, success,  } from 'zod'
-import jwt from 'jsonwebtoken'
 import { Router , type Request, type Response } from "express";
-import bcrypt from "bcryptjs";
 import { JWT_SECRET } from "../config/env.js";
 import { requireRole, userMiddleware } from "../middeleware/auth.js";
+import bcrypt from "bcryptjs";
+import jwt from 'jsonwebtoken'
+import { ObjectId } from "mongodb";
 
 export const userRouter = Router();
 
@@ -52,69 +53,79 @@ userRouter.post('/signup', async(req:Request, res:Response)=>{
         })
     }
 })
-
-userRouter.post('/signin', async(req:Request, res:Response)=>{
+userRouter.post('/signin', async (req: Request, res: Response) => {
     const requireBody = z.object({
-        email:z.email(),
-        password:z.string().min(6),
-    })
+        email: z.email(),
+        password: z.string().min(6),
+    });
     const parseData = requireBody.safeParse(req.body);
-    if(!parseData.success){
+    if (!parseData.success) {
         return res.status(400).json({
-            success:false,
-            data:{
-                error:"erron in zod parsing: " +  parseData.error
+            success: false,
+            data: {
+                error: "erron in zod parsing: " + parseData.error
             }
-        })
+        });
     }
-    const {email , password }  = parseData.data;
+    const { email, password } = parseData.data;
 
-    
-    try{
-        const user = await UserModel.findOne({email:email});
-        if(!user){
+
+    try {
+        const user = await UserModel.findOne({ email: email });
+        if (!user) {
             return res.status(403).json({
-                success:false,
-                data : "No user with this email"
-            })
+                success: false,
+                data: "No user with this email"
+            });
         }
-        const comparePassword  = await bcrypt.compare(password, user.password);
-        if(comparePassword){
-           const token =  jwt.sign({
-              id: user._id ,
-              role:user.role
-            },JWT_SECRET );
-            res.cookie('token' , token , {
-                httpOnly:true,
-                secure:false,
-                sameSite:'strict',
-                maxAge:1000*60*60*24*7
-            })
-            console.log('token: '+ token);
+        const comparePassword = await bcrypt.compare(password, user.password);
+        if (comparePassword) {
+            const token = jwt.sign({
+                id: user._id,
+                role: user.role
+            }, JWT_SECRET);
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: 'strict',
+                maxAge: 1000 * 60 * 60 * 24 * 7
+            });
+            console.log('token: ' + token);
             res.status(200).json({
-                success:true,
-                data:{
-                    msg:user.name+ " logged in "
+                success: true,
+                data: {
+                    msg: user.name + " logged in "
                 }
-            })
+            });
         }
-    }catch(e){
+    } catch (e) {
         res.status(500).json({
-                success:false,
-                data:{
-                    msg:"error :  " + e
-                }
-            })
+            success: false,
+            data: {
+                msg: "error :  " + e
+            }
+        });
     }
 });
 
+
+
 userRouter.post('/create/class' , userMiddleware , requireRole(['teacher']) , 
 async (req:Request , res:Response) => {
+
+  const ZodObjectId = z
+  .string()
+  .refine((val) => ObjectId.isValid(val), {
+    message: "Invalid ObjectId",
+  })
+  .transform((val) => new ObjectId(val));
+
     const requireBody = z.object({
         className: z.string(),
-        studentIds: z.string().array()
+        studentIds: z.string()
     })
     const parseData = requireBody.safeParse(req.body);
+    
     
     if(!parseData.success){
         return res.status(400).json({
