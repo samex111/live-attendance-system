@@ -3,17 +3,12 @@ import z, { email, success,  } from 'zod'
 import jwt from 'jsonwebtoken'
 import { Router , type Request, type Response } from "express";
 import bcrypt from "bcryptjs";
-import { JWT_STUDENT, JWT_TEACHER } from "../config/env.js";
+import { JWT_SECRET } from "../config/env.js";
 
 export const userRouter = Router();
 
 userRouter.post('/signup', async(req:Request, res:Response)=>{
-    // interface iReq{
-    //     name:string;
-    //     email:string;
-    //     password:string;
-    //     role:'student'|'teacher'
-    // }
+ 
     const requireBody = z.object({
         name:z.string(),
         email:z.email(),
@@ -83,10 +78,10 @@ userRouter.post('/signin', async(req:Request, res:Response)=>{
             })
         }
         const comparePassword  = await bcrypt.compare(password, user.password);
-         const JWT_SECRET = user.role === 'teacher' ? JWT_TEACHER : JWT_STUDENT;
         if(comparePassword){
            const token =  jwt.sign({
-              id: user._id 
+              id: user._id ,
+              role:user.role
             },JWT_SECRET );
             res.cookie('token' , token , {
                 httpOnly:true,
